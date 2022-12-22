@@ -1,11 +1,16 @@
-const fs = require('fs');
+const fs = require('fs-extra');
 const path = require('path');
+
+fs.ensureDirSync('./processed_package/messages');
+
 const messageIndex = require('./package/messages/index.json');
 
 let messageIndexCounter = 0;
 let messageIndexCounterLimit = 1000;
 
-let directMessageArray = {};
+let directMessageContainer = {};
+let deletedUsersContainer = {};
+let attachmentsArray = [];
 
 const replaceList = [
 	['<', '&lt;'],
@@ -32,6 +37,9 @@ for (index in messageIndex) {
 			directMessages[subindex].timestamp = directMessageArguments[1];
 			directMessages[subindex].contents = directMessageArguments[2];
 			directMessages[subindex].attachments = directMessageArguments[3];
+			if (directMessageArguments[3] && directMessageArguments[3].slice(0, 39) === "https://cdn.discordapp.com/attachments/") {
+				attachmentsArray.push(directMessageArguments[3]);
+			}
 		}
 
 		let directMessageObjectTag = messageIndex[index].slice(20);
@@ -43,12 +51,18 @@ for (index in messageIndex) {
 			"messages": directMessages
 		};
 
-		directMessageArray[directMessageObjectTag] = directMessageObject;
+		directMessageContainer[directMessageObjectTag] = directMessageObject;
 
-		fs.writeFileSync(`./processed_messages/${directMessageObjectTag}.json`, JSON.stringify(directMessageObject, null, '\t'));
+		if (directMessageObjectTag.slice(0,13) === 'Deleted User ') {
+			deletedUsersContainer[directMessageObjectTag] = directMessageObject;
+		}
+
+		fs.writeFileSync(`./processed_package/messages/${directMessageObjectTag}.json`, JSON.stringify(directMessageObject, null, '\t'));
 	}
 
 	messageIndexCounter++;
 }
 
-fs.writeFileSync(`./_all_messages.json`, JSON.stringify(directMessageArray, null, '\t'));
+fs.writeFileSync('./processed_package/_all_attachments.json', JSON.stringify(attachmentsArray, null, '\t'));
+fs.writeFileSync('./processed_package/_all_messages.json', JSON.stringify(directMessageContainer, null, '\t'));
+fs.writeFileSync('./processed_package/_deleted_messages.json', JSON.stringify(deletedUsersContainer, null, '\t'));
