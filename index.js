@@ -5,14 +5,13 @@ const messageIndex = require('./package/messages/index.json');
 let messageIndexCounter = 0;
 let messageIndexCounterLimit = 1000;
 
+let directMessageArray = {};
+
 const replaceList = [
 	['<', '&lt;'],
 	['>', '&gt;'],
 	['?', '(question mark)']
 ];
-
-const messagesPath = path.dirname('./package/messages');
-const processedMessagesPath = path.dirname('./processed_messages');
 
 for (index in messageIndex) {
 	if (messageIndex[index] === null) {
@@ -24,11 +23,6 @@ for (index in messageIndex) {
 	}
 	
 	if (messageIndex[index].slice(0, 20) === 'Direct Message with ') {
-		let directMessageObject = {};
-
-		directMessageObject.id = index;
-		directMessageObject.tag = messageIndex[index].slice(20);
-
 		let directMessages = fs.readFileSync(`./package/messages/c${index}/messages.csv`, { encoding: 'utf8', flag: 'r' });
 		directMessages = directMessages.split('\n').slice(1,-1); // remove 'ID,Timestamp,Contents,Attachments\r\n'
 		for (subindex in directMessages) {
@@ -39,15 +33,22 @@ for (index in messageIndex) {
 			directMessages[subindex].contents = directMessageArguments[2];
 			directMessages[subindex].attachments = directMessageArguments[3];
 		}
-		directMessageObject.messages = directMessages;
 
-		directMessageObjectTag = directMessageObject.tag;
+		let directMessageObjectTag = messageIndex[index].slice(20);
 		for (index in replaceList) {
 			directMessageObjectTag = directMessageObjectTag.replace(replaceList[index][0], replaceList[index][1]); // tag validation for file names
 		}
+
+		let directMessageObject = {
+			"messages": directMessages
+		};
+
+		directMessageArray[directMessageObjectTag] = directMessageObject;
 
 		fs.writeFileSync(`./processed_messages/${directMessageObjectTag}.json`, JSON.stringify(directMessageObject, null, '\t'));
 	}
 
 	messageIndexCounter++;
 }
+
+fs.writeFileSync(`./_all_messages.json`, JSON.stringify(directMessageArray, null, '\t'));
