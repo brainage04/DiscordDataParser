@@ -17,10 +17,15 @@ async function downloadFile(url, filepath) {
 const privateAttachmentsArray = require('./processed_package/private_messages/_attachments.json');
 const publicAttachmentsArray = require('./processed_package/public_messages/_attachments.json');
 
-const firstAttachment = 200; // increment this by 100 at a time
+let firstAttachment = 3460; // increment this by attachmentIncrement at a time
+const attachmentIncrement = 20; // number of attachments to download per execution
 
-function downloadAttachmentBatch(attachmentsArray, attachmentsFolder) {
-	for (let index = firstAttachment; index < firstAttachment + 100; index++) {
+async function downloadAttachmentBatch(attachmentsArray, attachmentsFolder) {
+	for (let index = firstAttachment; index < firstAttachment + attachmentIncrement; index++) {
+		if (index + 1 > attachmentsArray.length) { // prevents hard error caused by downloading attachments that don't exist (because they are out of index)
+			continue;
+		}
+		
 		const attachments = attachmentsArray[index].split(' ');
 	
 		for (let subindex = 0; subindex < attachments.length; subindex++) {
@@ -31,6 +36,15 @@ function downloadAttachmentBatch(attachmentsArray, attachmentsFolder) {
 			console.log(`Downloaded attachment ${index + 1}/${attachmentsArray.length}: ${fileName}`);
 		}
 	}
+
+	console.log('Downloads complete.');
 }
 
-downloadAttachmentBatch(publicAttachmentsArray, "public");
+async function downloadAllAttachments() {
+	for (let batchIndex = firstAttachment; batchIndex < privateAttachmentsArray.length; batchIndex += attachmentIncrement) {
+		await downloadAttachmentBatch(privateAttachmentsArray, "private");
+		firstAttachment += attachmentIncrement;
+	}
+}
+
+downloadAllAttachments();
