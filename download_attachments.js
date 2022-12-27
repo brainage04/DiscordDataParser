@@ -17,8 +17,9 @@ async function downloadFile(url, filepath) {
 const privateAttachmentsArray = require('./processed_package/private_messages/_attachments.json');
 const publicAttachmentsArray = require('./processed_package/public_messages/_attachments.json');
 
-let firstAttachment = 3460; // increment this by attachmentIncrement at a time
-const attachmentIncrement = 20; // number of attachments to download per execution
+let firstAttachment = 0; // increment this by attachmentIncrement at a time
+const lastAttachment = 100; // stop incrementing firstAttachment when it reaches this number
+const attachmentIncrement = 20; // number of attachments to download per batch
 
 async function downloadAttachmentBatch(attachmentsArray, attachmentsFolder) {
 	for (let index = firstAttachment; index < firstAttachment + attachmentIncrement; index++) {
@@ -41,7 +42,7 @@ async function downloadAttachmentBatch(attachmentsArray, attachmentsFolder) {
 }
 
 async function downloadAllAttachments() {
-	for (let batchIndex = firstAttachment; batchIndex < privateAttachmentsArray.length; batchIndex += attachmentIncrement) {
+	for (let batchIndex = firstAttachment; batchIndex < lastAttachment; batchIndex += attachmentIncrement) {
 		await downloadAttachmentBatch(privateAttachmentsArray, "private");
 		firstAttachment += attachmentIncrement;
 	}
